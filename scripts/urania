@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+import argparse
+import logging
+import pprint
+import urania.config
+import urania.commands
+
+
+def main():
+    logging.basicConfig()
+    logging.getLogger().setLevel(logging.DEBUG)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', '-c', default='/etc/urania.conf', help='The config file to use for setting up urania')
+
+    subparsers = parser.add_subparsers()
+    sync_parser = subparsers.add_parser('sync', help="Synchronize music between Google and the local filesystem")
+    sync_parser.add_argument('--user', '-u', default=None, help="The user to synchronize to. If not specified default to all configured users")
+    sync_parser.set_defaults(command='sync')
+
+    list_devices = subparsers.add_parser('list-devices', help="List all of the devices that are registered for all configured users")
+    list_devices.set_defaults(command='list-devices')
+
+    args = parser.parse_args()
+
+    urania.config.load(args.config)
+
+    if args.command == 'list-devices':
+        pprint.pprint(urania.commands.get_devices())
+    elif args.command == 'sync':
+        users = urania.config.all_users() if args.user is None else [urania.config.get_user(args.user)]
+        urania.commands.sync(users)
+
+if __name__ == '__main__':
+    main()
